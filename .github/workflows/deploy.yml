@@ -19,6 +19,14 @@ jobs:
           node-version: 14.4.0
 
       - name: Install dependencies
+        env:  
+          API_KEY: ${{ secrets.API_KEY }}
+          AUTH_DOMAIN: ${{ secrets.AUTH_DOMAIN }}
+          PROJECT_ID: ${{ secrets.PROJECT_ID }}
+          STORAGE_BUCKET: ${{ secrets.STORAGE_BUCKET }}
+          MESSAGE_SENDER_ID: ${{ secrets.MESSAGE_SENDER_ID }}
+          APP_ID: ${{ secrets.APP_ID }}
+          MEASUREMENT_ID: ${{ secrets.MEASUREMENT_ID }} 
         run: |
           yarn
       - name: Build nuxt app
