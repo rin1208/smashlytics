@@ -1,52 +1,45 @@
 <template>
-  <div class="modal-bg">
-    <div class="record-modal bg-white shadow-md rounded px-4 pt-6 pb-4 mb-4 flex flex-col overflow-auto">
-      <div class="modal-header">
-        <div class="close" @click="onClose">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M6 18L18 6M6 6L18 18" stroke="#4A5568" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <h2 class="text-xl py-2 border-b">オンラインの戦績を登録する</h2>
+  <div class="flex flex-col overflow-auto">
+    <div class="modal-header">
+      <h2 class="text-xl py-2 border-b">オンラインの戦績を登録する</h2>
+    </div>
+    <div class="modal-content pt-2 overflow-auto">
+      <div class="fighter-selecter">
+        <FighterSelecter
+          @select="select"
+          ref="fighter"
+          :usedFighterIds="usedFighterIds"
+          :previouslySelected="lastRecord.fighterId"
+          iconSize="44px"
+          :isShowAllOption="true"
+          label="自分のファイター"
+        />
       </div>
-      <div class="modal-content pt-2 overflow-auto">
-        <p class="error">{{ error }}</p>
-        <div class="fighter-selecter">
-          <FighterSelecter
-            @select="select"
-            ref="fighter"
-            :usedFighterIds="usedFighterIds"
-            :previouslySelected="lastRecord.fighterId"
-            iconSize="44px"
-            :isShowOption="true"
-            label="自分のファイター"
-          />
-        </div>
-        <div class="fighter-selecter">
-          <FighterSelecter
-            @select="select"
-            ref="opponent"
-            :previouslySelected="lastRecord.opponentId"
-            iconSize="44px"
-            label="相手のファイター"
-          />
-        </div>
-        
-        <div class="my-6 px-4">
-          <span class="text-gray-700 px-1 pt-3 flex items-center">▼詳しく記録したい人向け</span>
-          <span class="text-gray-600 text-xs px-1 pb-4 flex items-center">入力しておくとあとで詳しく分析できるよ！</span>
-          <TextField ref="globalSmashPower" :allowEmpty="false" label="世界戦闘力(万)" placeholder="例: 678万くらい → 678" class="pb-2" />
-          <StageSelecter ref="stageSelecter" :isShowOptionEmpty="false" />
-          <StocksSelecter ref="stocksSelecter" :isShowOptionEmpty="false" />
-          <Checkbox ref="isRepeat" label="連戦だった" />
-          <Checkbox ref="isVip" :defaultValue="lastRecord.isVip" label="VIPマッチ" />
-        </div>
+      <div class="fighter-selecter">
+        <FighterSelecter
+          @select="select"
+          ref="opponent"
+          :previouslySelected="lastRecord.opponentId"
+          iconSize="44px"
+          label="相手のファイター"
+        />
       </div>
-      <div class="modal-footer border-t pt-2">
-        <ResultButton @clickWin="isWin" @clickLose="isLose" class="pb-2" />
-        <div class="submit">
-          <Button @onClick="submit" label="登録する" />
-        </div>
+      
+      <div class="mt-6 px-4 mb-2">
+        <span class="text-gray-700 px-1 pt-3 flex items-center">▼詳しく記録したい人向け</span>
+        <span class="text-gray-600 text-xs px-1 pb-4 flex items-center">入力しておくとあとで詳しく分析できるよ！</span>
+        <TextField ref="globalSmashPower" :allowEmpty="false" label="世界戦闘力(万)" placeholder="504" suffix="万" width="90px" class="pb-2" />
+        <StageSelecter ref="stageSelecter" :isShowOptionEmpty="false" />
+        <StocksSelecter ref="stocksSelecter" :isShowOptionEmpty="false" />
+        <Checkbox ref="isRepeat" label="連戦だった" />
+        <Checkbox ref="isVip" :defaultValue="lastRecord.isVip" label="VIP入りしている" />
+      </div>
+    </div>
+    <div class="modal-footer border-t pt-2">
+      <ResultButton @clickWin="isWin" @clickLose="isLose" class="pb-2" />
+      <p class="error">{{ error }}</p>
+      <div class="submit">
+        <Button @onClick="submit" label="登録する" />
       </div>
     </div>
   </div>
@@ -134,6 +127,15 @@ export default {
         this.error = '自分・相手・結果は入力してください'
         return
       }
+      const globalSmashPower = Number(this.record.globalSmashPower)
+      if (this.record.globalSmashPower && !Number.isInteger(globalSmashPower)) {
+        this.error = '世界戦闘力には整数を入力してください'
+        return
+      }
+      if (this.record.globalSmashPower && (globalSmashPower < 1 || globalSmashPower > 2000)) {
+        this.error = '世界戦闘力は1万~2000万の間で入力してください'
+        return
+      }
       const newRecord = {
         createdAt: serverTimestamp,
         updatedAt: serverTimestamp,
@@ -146,7 +148,7 @@ export default {
         opponentId: this.record.opponentId,
         result: this.record.result,
         stage: this.$refs.stageSelecter.stage,
-        globalSmashPower: this.record.globalSmashPower ? Number(this.record.globalSmashPower) * 10000 : null,
+        globalSmashPower: this.record.globalSmashPower ? globalSmashPower * 10000 : null,
         stocks: this.$refs.stocksSelecter.stocks,
         isRepeat: this.$refs.isRepeat.input,
         isVip: this.$refs.isVip.input
@@ -192,31 +194,8 @@ export default {
 </script>
 
 <style lang="scss">
-.modal-bg {
-  position: fixed;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  width: 100%;
-  top: 0;
-  left: 0;
-  background: rgba(21, 28, 56, 0.568);
-  z-index: 20;
-}
-.record-modal {
-  position: relative;
-  height: 90%;
-  max-width: 400px;
-  z-index: 30;
-}
-.close {
-  position: absolute;
-  margin: 8px 8px 0 0;
-  right: 0;
-  top: 0;
-}
-.details {
-  margin: 20px 0 30px 0;
+.error {
+  color: #ff0000;
+  padding-bottom: 4px;
 }
 </style>

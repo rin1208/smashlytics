@@ -30,10 +30,12 @@ const state = {
     stocks: 'all',
     filterRepeat: false
   },
+  chartType: '',
   notice: {
     noticeType: null,
     message: ''
   },
+  isShowModal: false,
   version: {
     versionNumber: 0,
     refreshedAt: null
@@ -106,6 +108,9 @@ const actions = {
       ...updateUserDto
     })
   },
+  setIsShowModal ({ commit }, isShowModal) {
+    commit('setIsShowModal', isShowModal)
+  },
   setNotice ({ commit }, notice) {
     commit('setNotice', notice)
   }
@@ -130,8 +135,14 @@ const mutations = {
   setAnalyticsSettings(state, payload) {
     state.analyticsSettings = payload
   },
+  setChartType(state, payload) {
+    state.chartType = payload
+  },
   setNotice(state, payload) {
     state.notice = payload
+  },
+  setIsShowModal(state, payload) {
+    state.isShowModal = payload
   },
   setVersion(state, payload) {
     state.version = payload

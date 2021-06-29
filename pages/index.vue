@@ -2,12 +2,16 @@
   <div class="container">
     <div class="add">
       <template v-if="isShowAddModal">
-        <AddRecordModal :lastRecord="lastRecord" @close="closeModal" />
+        <ModalBase @close="closeModal">
+          <AddRecordModal :lastRecord="lastRecord" @close="closeModal" />
+        </ModalBase>
       </template>
     </div>
     <div class="edit">
       <template v-if="isShowEditModal">
-        <EditRecordModal :editingRecord="editingRecord" @close="closeModal" />
+        <ModalBase @close="closeModal">
+          <EditRecordModal :editingRecord="editingRecord" @close="closeModal" />
+        </ModalBase>
       </template>
     </div>
 
@@ -58,6 +62,9 @@
         </div>
       </div>
     </div>
+    <div class="pt-2" v-if="!isShowAllRecords">
+      <Button @onClick="showAllRecords" label="戦績をもっと表示する" />
+    </div>
     
     <p class="error text-xl py-2 mb-4 text-red-700">{{ error }}</p>
     <div v-show="error" class="border-b">
@@ -75,12 +82,11 @@
 </template>
 
 <script>
-import firebase from '@/plugins/firebase'
 import { now, date2string } from '@/utils/date.js'
-const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp()
 import Button from '@/components/parts/Button.vue'
 import Records from '@/components/Records.vue'
 import FighterIcon from '@/components/parts/FighterIcon.vue'
+import ModalBase from '@/components/modals/ModalBase.vue'
 import AddRecordModal from '@/components/modals/AddRecordModal.vue'
 import EditRecordModal from '@/components/modals/EditRecordModal.vue'
 // import Cookies from "universal-cookie"
@@ -88,6 +94,7 @@ import EditRecordModal from '@/components/modals/EditRecordModal.vue'
 export default {
   components: {
     Records,
+    ModalBase,
     AddRecordModal,
     EditRecordModal,
     FighterIcon,
@@ -100,6 +107,7 @@ export default {
       headings: ['日付','自分','相手','勝敗','編集'],
       editingRecord: {},
       now: now(),
+      isShowAllRecords: false,
       error: ''
     }
   },
@@ -114,7 +122,10 @@ export default {
       return this.$store.state.user
     },
     records() {
-      return this.$store.state.records.filter(record => record.roomType !== 'arena')
+      if (this.isShowAllRecords) {
+        return this.$store.state.records.filter(record => record.roomType !== 'arena')
+      }
+      return this.$store.state.records.filter(record => record.roomType !== 'arena').slice(0, 30)
     },
     isLogin() {
       return Boolean(this.$store.state.user.userId)
@@ -128,12 +139,17 @@ export default {
     },
     resultsToday() {
       const today = date2string(this.now).split(' ')[0]
-      const recordsToday = this.records.filter(record => record.createdAtString.split(' ')[0] === today)
+      const recordsToday = this.$store.state.records
+        .filter(record => record.roomType !== 'arena')
+        .filter(record => record.createdAtString.split(' ')[0] === today)
       const wins = recordsToday.filter(record => record.result).length
       return wins + '勝' + (recordsToday.length - wins) + '敗'
     }
   },
   methods: {
+    showAllRecords() {
+      this.isShowAllRecords = true
+    },
     openAddModal() {
       this.error = ''
       if (!this.isLogin) {
@@ -141,6 +157,7 @@ export default {
         return
       }
       this.isShowAddModal = true
+      this.$store.dispatch('setIsShowModal', true)
     },
     openEditModal(record) {
       this.error = ''
@@ -150,10 +167,12 @@ export default {
       }
       this.isShowEditModal = true
       this.editingRecord = record
+      this.$store.dispatch('setIsShowModal', true)
     },
     closeModal() {
       this.isShowAddModal = false
       this.isShowEditModal = false
+      this.$store.dispatch('setIsShowModal', false)
     },
     toNew() {
       this.$router.push("/new")

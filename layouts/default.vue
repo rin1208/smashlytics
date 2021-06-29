@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div :class="{ fixbackground: (isShowModal || notice.noticeType) }">
     <Header />
     <div class="main">
       <nuxt />
@@ -30,6 +30,9 @@ export default {
   computed: {
     notice() {
       return this.$store.state.notice
+    },
+    isShowModal() {
+      return this.$store.state.isShowModal
     }
   }
 }
@@ -37,12 +40,15 @@ export default {
 
 <style lang="scss">
 .main {
-  margin-top: 60px;
+  margin-top: 50px;
   margin-bottom: 70px;
-  min-height: calc(100vh - 130px);
-  max-width: 100vw;
+  min-height: calc(100vh - 120px);
+  width: 100vw;
 }
-
+.fixbackground {
+  overflow-y: hidden;
+  position: fixed;
+}
 .maintenance {
   margin: 0 auto;
   height: calc(100vh - 130px);

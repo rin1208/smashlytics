@@ -36,6 +36,7 @@ export default {
     '~/plugins/firebase',
     '~/plugins/cookie',
     '~/plugins/setup',
+    '~/plugins/datepicker',
     {
       src: '~/plugins/ga.js',
       mode: 'client'

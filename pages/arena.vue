@@ -2,16 +2,20 @@
   <div class="container">
     <div class="add">
       <template v-if="isShowAddModal">
-        <AddArenaRecordModal :lastRecord="lastRecord" @close="closeModal" />
+        <ModalBase @close="closeModal">
+          <AddArenaRecordModal :lastRecord="lastRecord" @close="closeModal" />
+        </ModalBase>
       </template>
     </div>
     <div class="edit">
       <template v-if="isShowEditModal">
-        <EditArenaRecordModal :editingRecord="editingRecord" @close="closeModal" />
+        <ModalBase @close="closeModal">
+          <EditArenaRecordModal :editingRecord="editingRecord" @close="closeModal" />
+        </ModalBase>
       </template>
     </div>
 
-    <div class="results">
+    <div class="results pt-2">
       <p v-show="isLogin" class="results-number">本日の戦績: {{ resultsToday }}</p>
       <Button @onClick="openAddModal" label="戦績を登録する" />
     </div>
@@ -61,6 +65,9 @@
         </div>
       </div>
     </div>
+    <div class="pt-2 pb-4" v-if="!isShowAllRecords">
+      <Button @onClick="showAllRecords" label="戦績をもっと表示する" />
+    </div>
   </div>
 </template>
 
@@ -69,6 +76,7 @@ import firebase from '@/plugins/firebase'
 import { now, date2string } from '@/utils/date.js'
 import Button from '@/components/parts/Button.vue'
 import FighterIcon from '@/components/parts/FighterIcon.vue'
+import ModalBase from '@/components/modals/ModalBase.vue'
 import AddArenaRecordModal from '@/components/modals/AddArenaRecordModal.vue'
 import EditArenaRecordModal from '@/components/modals/EditArenaRecordModal.vue'
 import fighters from '@/assets/fighters.json'
@@ -78,6 +86,7 @@ const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp()
 export default {
   components: {
     FighterIcon,
+    ModalBase,
     AddArenaRecordModal,
     EditArenaRecordModal,
     Button
@@ -89,7 +98,8 @@ export default {
       isShowAddModal: false,
       isShowEditModal: false,
       editingRecord: {},
-      now: now()
+      now: now(),
+      isShowAllRecords: false,
     }
   },
   computed: {
@@ -97,7 +107,10 @@ export default {
       return this.$store.state.user
     },
     records() {
-      return this.$store.state.records.filter(record => record.roomType === 'arena')
+      if (this.isShowAllRecords) {
+        return this.$store.state.records.filter(record => record.roomType === 'arena')
+      }
+      return this.$store.state.records.filter(record => record.roomType === 'arena').slice(0, 30)
     },
     isLogin() {
       return Boolean(this.$store.state.user.userId)
@@ -111,7 +124,9 @@ export default {
     },
     resultsToday() {
       const today = date2string(this.now).split(' ')[0]
-      const recordsToday = this.records.filter(record => record.createdAtString.split(' ')[0] === today)
+      const recordsToday = this.$store.state.records
+        .filter(record => record.roomType === 'arena')
+        .filter(record => record.createdAtString.split(' ')[0] === today)
       const wins = recordsToday.filter(record => record.result).length
       return wins + '勝' + (recordsToday.length - wins) + '敗'
     }
@@ -124,16 +139,22 @@ export default {
       if (name.length < 6) return name
       return name.slice(0,4) + '...'
     },
+    showAllRecords() {
+      this.isShowAllRecords = true
+    },
     openAddModal() {
       this.isShowAddModal = true
+      this.$store.dispatch('setIsShowModal', true)
     },
     openEditModal(record) {
       this.isShowEditModal = true
       this.editingRecord = record
+      this.$store.dispatch('setIsShowModal', true)
     },
     closeModal() {
       this.isShowAddModal = false
       this.isShowEditModal = false
+      this.$store.dispatch('setIsShowModal', false)
     }
   }
 }
